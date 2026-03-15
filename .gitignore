@@ -1,0 +1,10 @@
+.venv/
+breast_friend.db
+.google_credentials.json
+.google_token.json
+.gmail_credentials.json
+.gmail_token.json
+__pycache__/
+*.pyc
+.DS_Store
+/tmp/
