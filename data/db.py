@@ -225,12 +225,6 @@ def _upsert_df(df: pd.DataFrame, table: str, conn: sqlite3.Connection) -> tuple[
     for col in df.select_dtypes(include="datetime64").columns:
         df[col] = df[col].dt.isoformat()
 
-    df.to_sql(table, conn, if_exists="append", index=False, method="multi")
-    # INSERT OR REPLACE is the default for tables that have PK constraints.
-    # pandas to_sql uses INSERT, so we need to handle conflicts ourselves.
-    # We'll use executemany with INSERT OR REPLACE instead:
-    conn.rollback()  # undo the failed insert attempt above
-
     cols   = ", ".join(df.columns)
     placeholders = ", ".join(["?"] * len(df.columns))
     sql = f"INSERT OR REPLACE INTO {table} ({cols}) VALUES ({placeholders})"
