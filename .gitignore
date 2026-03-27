@@ -8,3 +8,8 @@ __pycache__/
 *.pyc
 .DS_Store
 /tmp/
+.claude/settings.local.json
+csv 0227.zip
+csv 0227/
+csv.zip
+rawdata 0226/

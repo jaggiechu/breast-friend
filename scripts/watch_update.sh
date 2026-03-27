@@ -20,10 +20,11 @@ wait_for_download() {
     local attempt=1
     while [ $attempt -le $MAX_RETRIES ]; do
         local latest
-        latest=$(find "$WATCH_DIR" -name "*.btbk" -type f -print0 2>/dev/null | xargs -0 ls -t 2>/dev/null | head -1)
+        # Use ls instead of find — iCloud placeholder files may not match find -type f
+        latest=$(ls -t "$WATCH_DIR"/*.btbk 2>/dev/null | head -1)
         if [ -z "$latest" ]; then
             echo "$(date): No .btbk files found, retry $attempt/$MAX_RETRIES..." >> "$LOG"
-        elif python3 -c "import zipfile; zipfile.ZipFile('$latest', 'r').close()" 2>/dev/null; then
+        elif /opt/homebrew/bin/python3 -c "import zipfile; zipfile.ZipFile('$latest', 'r').close()" 2>/dev/null; then
             echo "$(date): File ready: $(basename "$latest")" >> "$LOG"
             return 0
         else
@@ -56,13 +57,13 @@ wait_for_download() {
     python3 update.py >> "$LOG" 2>&1
     LAST_RUN=$(date +%s)
 
-    # Push to GitHub Pages if dashboard changed
-    if ! git diff --quiet docs/index.html 2>/dev/null; then
-        git add docs/index.html daily_summary.csv
+    # Push to GitHub if any tracked data changed
+    if ! git diff --quiet docs/index.html daily_summary.csv session_detail.csv 2>/dev/null; then
+        git add docs/index.html daily_summary.csv session_detail.csv
         git commit -m "Auto-update: new data $(date '+%Y-%m-%d %H:%M')" >> "$LOG" 2>&1
         git push origin main >> "$LOG" 2>&1
-        echo "$(date): Pushed to GitHub Pages" >> "$LOG"
+        echo "$(date): Pushed to GitHub" >> "$LOG"
     else
-        echo "$(date): No dashboard changes to push" >> "$LOG"
+        echo "$(date): No data changes to push" >> "$LOG"
     fi
 done

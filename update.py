@@ -37,6 +37,12 @@ def main():
     df = get_daily_summary(conn)
     df.to_csv("daily_summary.csv", index=False)
     log.info("Saved daily_summary.csv (%d rows)", len(df))
+
+    # Step 2b: Export session_detail CSV (last 7 days, for mobile access)
+    log.info("Step 2b: Exporting session_detail.csv...")
+    from data.aggregator import export_session_detail
+    n = export_session_detail(conn, "session_detail.csv", days=7)
+    log.info("Saved session_detail.csv (%d rows)", n)
     conn.close()
 
     # Step 3: Google Sheets

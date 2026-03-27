@@ -248,3 +248,36 @@ def get_daily_summary(conn: sqlite3.Connection) -> pd.DataFrame:
     return pd.read_sql(
         "SELECT * FROM daily_summary ORDER BY date DESC", conn
     )
+
+
+def export_session_detail(conn: sqlite3.Connection, path: str, days: int = 7) -> int:
+    """Export recent session-level data to CSV for mobile/remote access.
+
+    Combines nursing, pump, expressed, and formula sessions into one file
+    sorted by datetime, including notes (needed for inventory checks).
+    """
+    cutoff_sql = f"date(MAX(date), '-{days} days')"
+
+    queries = [
+        f"""SELECT date, datetime, 'nursing' AS type,
+                   nursing_ml AS ml, total_min AS duration_min, note
+            FROM nursing_sessions
+            WHERE date >= (SELECT {cutoff_sql} FROM nursing_sessions)""",
+        f"""SELECT date, datetime, 'pump' AS type,
+                   total_ml AS ml, total_min AS duration_min, note
+            FROM pump_sessions
+            WHERE date >= (SELECT {cutoff_sql} FROM pump_sessions)""",
+        f"""SELECT date, datetime, 'expressed' AS type,
+                   amount_ml AS ml, NULL AS duration_min, note
+            FROM expressed_sessions
+            WHERE date >= (SELECT {cutoff_sql} FROM expressed_sessions)""",
+        f"""SELECT date, datetime, 'formula' AS type,
+                   amount_ml AS ml, NULL AS duration_min, note
+            FROM formula_sessions
+            WHERE date >= (SELECT {cutoff_sql} FROM formula_sessions)""",
+    ]
+
+    frames = [pd.read_sql(q, conn) for q in queries]
+    df = pd.concat(frames, ignore_index=True).sort_values("datetime")
+    df.to_csv(path, index=False)
+    return len(df)
