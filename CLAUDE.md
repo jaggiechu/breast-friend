@@ -1,8 +1,5 @@
 # Breast Friend — Project Instructions
 
-## Git Commit Reminder
-After making 1-2 code/config changes, proactively remind the user to commit and push. Don't wait until the end of a long session — suggest committing early and often so changes reach the remote repo (needed for mobile access).
-
 ## Auto-refresh Data
 **IMPORTANT:** At the start of every conversation in this project, BEFORE answering any user questions, run:
 ```bash
