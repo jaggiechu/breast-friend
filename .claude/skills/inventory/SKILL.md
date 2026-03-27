@@ -43,25 +43,42 @@ Look for patterns in notes like:
 - "Given Xml" or "gave Xml" → use X as the inventory deduction
 - "扔" or "没吃" → indicates waste, may have additional inventory loss
 
-## Calculation
+## Calculation — EVENT-BY-EVENT, NOT BY ROUND
 
-1. Query all pump and expressed events from the start datetime onward, ordered by datetime
-2. For each event:
+**CRITICAL: Track inventory at every individual pump/expressed event in chronological order.**
+
+Do NOT group by rounds and then check. Within a single round, pump often happens AFTER expressed feeds. If you check at the round level, you'll miss the moment when inventory goes negative — which is exactly where missing records are hiding.
+
+1. Query all pump and expressed events from the start datetime onward, **ordered by datetime**
+2. Walk through each event one by one:
    - Pump: `inventory += total_ml`
    - Expressed: `inventory -= amount_given` (check notes for actual amount given)
-3. Group events into rounds (90-minute gap = new round) for readability
+3. **Flag every moment inventory goes negative** — this means at that exact timestamp, there wasn't enough milk in storage to give that bottle. Either:
+   - A pump session before that event was not recorded
+   - Collector milk (passive collection during nursing, typically 5-15ml) was used but not logged as a pump
+   - Frozen/stored milk from a separate stash was used
+
+### Collector (接奶器) milk
+
+During nursing, mom sometimes uses a collector on the other breast. This yields 5-15ml that goes into inventory but may NOT be recorded as a pump session. Pump notes sometimes mention "from collector" or "Xml from collector + Yml pump". If inventory is negative by a small amount (≤15ml), unrecorded collector usage is the most likely explanation.
 
 ## Output Format
 
-Show per-round inventory changes:
+Show the event-by-event inventory ledger:
 
 ```
-轮 | 间隔  | 亲喂     | 泵奶    | 用奶E    | 水奶F    | 库存
----------------------------------------------------------------------
-1 |   —  |    —    |  +88   |    —    |    —    |   88ml  03/20 23:57
-2 | 280m |  N 96   |  +50   |    —    |    —    |  138ml  03/21 06:29-07:15
+起始库存（来源说明）:                          XXml
+
+HH:MM  P +XX                                 XXml
+HH:MM  E -XX                                 XXml
+HH:MM  E -XX                                -XXml ← 负了
+HH:MM  P +XX                                 XXml
 ...
+
+计算库存: XXml  实际: XXml  差额: XXml
 ```
+
+Mark every line where inventory goes negative with `← 负了`.
 
 Then show the final comparison:
 
@@ -72,10 +89,11 @@ Then show the final comparison:
 ## Interpretation
 
 - **差额 < 10ml**: No missing records, normal measurement error
-- **差额 > 10ml (calculated < actual)**: Likely missing pump record(s). Identify which round(s) have no pump but should (e.g., long interval with nursing but no pump, or inventory going deeply negative mid-day)
+- **差额 10-15ml (calculated < actual)**: Likely unrecorded collector milk (~5-15ml per nursing session)
+- **差额 > 15ml (calculated < actual)**: Likely missing pump record(s). Identify where inventory first goes negative — the missing pump must be BEFORE that timestamp
 - **差额 > 10ml (calculated > actual)**: Likely unrecorded waste/spills, or notes with "given X" not accounted for
 
 Point out the most likely location(s) of missing records based on:
-1. Rounds with nursing but no pump (⚠️ flag)
-2. Rounds where inventory drops sharply
-3. Unusually long gaps without any pump
+1. The exact timestamps where inventory goes negative
+2. Whether the deficit is small enough to be explained by collector (~15ml) or requires a full missing pump session
+3. Check pump notes for "from collector" patterns on nearby days to estimate typical collector yield
