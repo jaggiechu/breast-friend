@@ -1,12 +1,12 @@
 #!/bin/bash
 # Watch iCloud Baby Tracker backups for changes → trigger full pipeline
 # fswatch debounces 30s after last change before triggering
+# Note: bash ls can't read iCloud dirs from launchd, but Python can —
+# so we skip bash-based file checks and let update.py handle it directly.
 
 WATCH_DIR="/Users/chenzhu/Library/Mobile Documents/iCloud~com~nighp~babytracker/Documents/backups"
 PROJECT_DIR="/Users/chenzhu/Claude Code Projects/breast-friend"
 LOG="/tmp/breast_friend_update.log"
-MAX_RETRIES=6
-RETRY_DELAY=10
 MIN_INTERVAL=60  # seconds between runs to prevent duplicate triggers
 
 export PATH="/opt/homebrew/bin:$PATH"
@@ -14,29 +14,6 @@ export PATH="/opt/homebrew/bin:$PATH"
 LAST_RUN=0
 
 echo "$(date): Watcher started, monitoring $WATCH_DIR" >> "$LOG"
-
-# Wait for the latest .btbk file to be fully downloaded from iCloud
-wait_for_download() {
-    local attempt=1
-    while [ $attempt -le $MAX_RETRIES ]; do
-        local latest
-        # Use ls + grep — iCloud placeholder files may not match shell globs
-        latest=$(ls -t "$WATCH_DIR/" 2>/dev/null | grep '\.btbk$' | head -1)
-        [ -n "$latest" ] && latest="$WATCH_DIR/$latest"
-        if [ -z "$latest" ]; then
-            echo "$(date): No .btbk files found, retry $attempt/$MAX_RETRIES..." >> "$LOG"
-        elif /opt/homebrew/bin/python3 -c "import zipfile; zipfile.ZipFile('$latest', 'r').close()" 2>/dev/null; then
-            echo "$(date): File ready: $(basename "$latest")" >> "$LOG"
-            return 0
-        else
-            echo "$(date): File still downloading, retry $attempt/$MAX_RETRIES..." >> "$LOG"
-        fi
-        sleep $RETRY_DELAY
-        attempt=$((attempt + 1))
-    done
-    echo "$(date): File not ready after $MAX_RETRIES retries, skipping" >> "$LOG"
-    return 1
-}
 
 /opt/homebrew/bin/fswatch -o --latency 30 "$WATCH_DIR" | while read -r count; do
     NOW=$(date +%s)
@@ -46,16 +23,15 @@ wait_for_download() {
         continue
     fi
 
-    echo "$(date): Detected change, waiting for iCloud download..." >> "$LOG"
-
-    if ! wait_for_download; then
-        continue
-    fi
+    echo "$(date): Detected change, waiting 60s for iCloud download..." >> "$LOG"
+    sleep 60
 
     echo "$(date): Running update..." >> "$LOG"
     cd "$PROJECT_DIR"
     source .venv/bin/activate
-    python3 update.py >> "$LOG" 2>&1
+    python3 update.py --skip-sheets >> "$LOG" 2>&1
+    UPDATE_EXIT=$?
+    echo "$(date): update.py exit=$UPDATE_EXIT" >> "$LOG"
     LAST_RUN=$(date +%s)
 
     # Push to GitHub if any tracked data changed
