@@ -20,8 +20,9 @@ wait_for_download() {
     local attempt=1
     while [ $attempt -le $MAX_RETRIES ]; do
         local latest
-        # Use ls instead of find — iCloud placeholder files may not match find -type f
-        latest=$(ls -t "$WATCH_DIR"/*.btbk 2>/dev/null | head -1)
+        # Use ls + grep — iCloud placeholder files may not match shell globs
+        latest=$(ls -t "$WATCH_DIR/" 2>/dev/null | grep '\.btbk$' | head -1)
+        [ -n "$latest" ] && latest="$WATCH_DIR/$latest"
         if [ -z "$latest" ]; then
             echo "$(date): No .btbk files found, retry $attempt/$MAX_RETRIES..." >> "$LOG"
         elif /opt/homebrew/bin/python3 -c "import zipfile; zipfile.ZipFile('$latest', 'r').close()" 2>/dev/null; then
