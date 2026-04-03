@@ -1,5 +1,5 @@
 date,total_intake_ml,bm_intake_ml,nursing_vol_ml,expressed_ml,formula_ml,bm_pct,bm_supply_ml,pump_total_ml,nursing_pct_of_supply,pump_sessions_count,pump_vol_highest_ml,pump_vol_lowest_ml,nursing_sessions_count,nursing_total_min,nursing_transfer_highest_ml,nursing_transfer_lowest_ml,diaper_wet_count,diaper_dirty_count,diaper_mixed_count,sleep_total_min,weight_lbs,weight_note,last_record_time,is_complete_day,has_nursing_ml
-2026-04-02,585.0,397.0,110.0,287.0,188.0,67.9,298.0,188.0,36.9,3.0,100.0,1.0,2,72.0,55.0,55.0,5,1,0,472.0,,,2026-04-02 15:46:28,0,1
+2026-04-02,837.5,539.5,152.5,387.0,298.0,64.4,582.5,430.0,26.2,5.0,100.0,75.0,4,129.0,55.0,15.0,9,1,0,653.0,,,2026-04-02 23:30:10,1,1
 2026-04-01,815.0,468.0,213.0,255.0,347.0,57.4,565.0,352.0,37.7,7.0,96.0,1.0,5,161.0,60.0,20.0,11,0,0,534.0,11.375,"11lbs 6.0oz
 ",2026-04-01 23:59:15,1,1
 2026-03-31,754.2,556.2,235.2,321.0,198.0,73.7,531.2,296.0,44.3,6.0,82.0,30.0,5,228.0,50.0,41.25,9,1,0,810.0,10.3125,"11lbs 5.6oz
