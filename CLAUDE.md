@@ -49,6 +49,9 @@ cat "/Users/chenzhu/Claude Code Projects/breast-friend/daily_summary.csv"
 1. **Frequent milk removal** → 增加产量
 2. **不超过 3-4 小时不 removal** → 避免堵奶
 
+### 间隔分析规则
+**分析 removal 间隔时，必须看所有 milk removal（pump + nursing）的间隔，不能只看 pump 到 pump。** 因为 nursing 也是 milk removal，会重置乳房的蓄奶计时。例如：如果 10:57 泵奶、14:45 亲喂，那么到 16:25 的间隔是 1h40m（从上次 nursing 算起），不是 5.5h（从上次 pump 算起）。
+
 ## 分轮规则 (Round Grouping)
 
 **一轮 = 宝宝吃了一顿饭。** 不要用固定时间间隔（如90分钟）定义轮次。
