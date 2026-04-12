@@ -35,34 +35,21 @@ Tables and key columns:
 
 **A round = baby eats one meal.** The primary criterion is baby intake reaching the per-feed target, NOT time gaps.
 
-### Step 0: Determine per-feed target (dynamic)
+### Algorithm
 
-不要使用固定值。根据当天数据动态计算：
-- 先用 daily_summary 的 total_intake_ml 和实际轮数估算，或参考最近 3-5 天完整天的每轮均值
-- 近期参考范围：2 月 ~90ml，3 月 ~100ml，4 月 ~110-120ml
-- 如果当天数据不足（进行中的天），用前 3 天完整天的每轮均值作为 target
-
-### Step 1: Initial grouping
-
-1. Query ALL events (nursing, pump, expressed, formula) sorted by datetime
-2. Walk through events, accumulating baby intake (nursing_ml + expressed + formula):
-   - When cumulative baby intake reaches the per-feed target → round complete
+1. Query ALL events (nursing, pump, expressed, formula) for the requested date(s), sorted by datetime
+2. Determine the day's per-feed target: `total_daily_intake / number_of_feeds` (typically ~90-100ml recently)
+3. Walk through events in order, accumulating baby intake (nursing_ml + expressed + formula):
+   - When cumulative baby intake reaches the per-feed target → this completes a round
    - Any pump event(s) immediately following (before the next feeding event) belong to the same round
-   - The next feeding event starts a new round
-3. Time gaps are a **secondary signal only** — gap >3.5h almost certainly = new round, but short gap does NOT mean same round
-
-### Step 2: Detect "snack" rounds (应急补喂)
-
-Initial grouping 完成后，做一次后处理扫描：
-- 如果一个 round 的 baby intake 明显低于 target（< target × 0.6），且前后相邻 round 的 intake 都在正常范围（>= target × 0.85），则标记该 round 为 `🍼 snack`（应急补喂，不是完整一轮）
-- Snack round 在表格中正常展示并标记 `🍼 snack`，合计行中注明 snack 数量（如 "7轮 + 1 snack"）
+   - The next feeding event (nursing, expressed, or formula) starts a new round
+4. Time gaps are a **secondary signal only** — a gap >3-4 hours with no events almost certainly means a new round, but a gap <90 min does NOT mean same round if baby already ate a full meal
 
 ### Important rules
 
-- A round does NOT always start with nursing — it can start with bottle feed when mom skips nursing
+- A round does NOT always start with nursing — it can start with bottle feed (expressed/formula) when mom skips nursing
 - A standalone pump between feeding events belongs to whichever round's feeding it is closest to (usually the one just before)
-- Do NOT use a fixed time threshold as the primary round boundary — two full meals can happen 73 minutes apart
-- Small trailing feeds (<30ml within 30min of round completion) merge into the current round, not a new one
+- Do NOT use a fixed time threshold (like 90 min) as the primary round boundary — two full meals can happen 73 minutes apart
 
 4. For each round, calculate:
    - **间隔**: time from the last event of the previous round to the first event of this round
